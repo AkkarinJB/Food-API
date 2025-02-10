@@ -1,3 +1,4 @@
+import joblib
 import pandas as pd
 import numpy as np
 from sklearn.neighbors import KNeighborsRegressor
@@ -28,7 +29,11 @@ def train_knn():
     knn_model = KNeighborsRegressor(n_neighbors=20, weights='distance')
     knn_model.fit(X_selected, y_food)
 
+    joblib.dump(knn_model, "knn_model.pkl")
+
     return knn_model, food_df, selected_features
+
+# train_knn()
 
 def recommend_food(knn_model, food_df, selected_features, user_input):
     user_array = np.array([[user_input.calories, user_input.carbohydrates, user_input.protein]])
