@@ -36,6 +36,26 @@ except FileNotFoundError:
 def health_check():
     return {"status": "API is running", "model_loaded": knn_model is not None}
 
+# Calculate BMR & TDEE
+def calculate_calories(age, gender, weight, height, activity_level):
+    activity_multipliers = {
+        "sedentary": 1.2,
+        "light": 1.375,
+        "moderate": 1.55,
+        "active": 1.725,
+        "very active": 1.9
+    }
+
+    if activity_level not in activity_multipliers:
+        raise HTTPException(status_code=400, detail="Invalid activity level. Choose from: 'sedentary', 'light', 'moderate', 'active', 'very active'")
+
+    if gender.lower() == "male":
+        bmr = 10 * weight + 6.25 * height - 5 * age + 5
+    else:
+        bmr = 10 * weight + 6.25 * height - 5 * age - 161
+
+    return round(bmr * activity_multipliers[activity_level])
+
 # User Input Model
 class UserInput(BaseModel):
     age: int
@@ -50,8 +70,19 @@ class UserInput(BaseModel):
 @app.post("/recommend")
 def get_recommendation(user_input: UserInput):
     try:
-        recommended_foods = recommend_food(knn_model, food_df, selected_features, user_input)
-        return {"recommended_foods": recommended_foods}
+        # คำนวณ Daily Calories ก่อน
+        daily_calories = calculate_calories(
+            user_input.age, user_input.gender, user_input.weight,
+            user_input.height, user_input.activity_level
+        )
+
+        # ส่ง daily_calories ไปที่ recommend_food()
+        recommended_foods = recommend_food(knn_model, food_df, selected_features, user_input, daily_calories)
+
+        return {
+            "recommended_foods": recommended_foods,
+            "daily_calories": daily_calories
+        }
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
