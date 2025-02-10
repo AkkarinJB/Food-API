@@ -99,14 +99,10 @@ def get_recommendation(user_input: UserInput):
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-if __name__ == "__main__":
-    port = os.getenv("PORT", "8000")
+port = int(os.getenv("PORT", "8000"))  
 
-try:
-    port = int(port)
-except ValueError:
-    print(f"Invalid PORT value: {port}, using default 8000")
-    port = 8000
+if __name__ == "__main__":
+    uvicorn.run(app, host="0.0.0.0", port=port)
     
     # x = get_recommendation (
     #     UserInput(
