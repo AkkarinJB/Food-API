@@ -1,48 +1,60 @@
-import pandas as pd
-import numpy as np
+import os
+import uvicorn
 import pickle
-from sklearn.neighbors import KNeighborsRegressor
-from sklearn.preprocessing import MinMaxScaler
-from sklearn.feature_selection import SelectKBest, f_regression
+import numpy as np
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
+from fastapi.middleware.cors import CORSMiddleware
+from model import train_knn, recommend_food
 
-def train_knn():
-    food_df = pd.read_csv("data/pred_food.csv")
+# Initialize FastAPI app
+app = FastAPI()
 
-    # Data Cleaning
-    columns_to_fill = ["Glycemic Index", "Calories", "Carbohydrates", "Protein", "Fat", "Fiber Content"]
-    for col in columns_to_fill:
-        median_value = food_df[col].median()
-        food_df[col] = food_df[col].replace(0, median_value)
+# CORS Middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  
+    allow_credentials=True,
+    allow_methods=["*"], 
+    allow_headers=["*"], 
+)
 
-    # Scaling Data
-    scaler = MinMaxScaler()
-    food_df[columns_to_fill] = scaler.fit_transform(food_df[columns_to_fill])
-
-    # Feature Selection
-    X_food = food_df[["Calories", "Carbohydrates", "Protein", "Fat", "Fiber Content"]]
-    y_food = food_df["Glycemic Index"]
-    selector = SelectKBest(score_func=f_regression, k=3)
-    X_selected = selector.fit_transform(X_food, y_food)
-    selected_features = X_food.columns[selector.get_support()]
-
-    # Train Model
-    knn_model = KNeighborsRegressor(n_neighbors=20, weights='distance')
-    knn_model.fit(X_selected, y_food)
-
-    # Save Model
-    with open("knn_model.pkl", "wb") as f:
+# Load or Train Model
+model_path = "knn_model.pkl"
+try:
+    with open(model_path, "rb") as f:
+        knn_model, food_df, selected_features = pickle.load(f)
+    print("Model loaded successfully!")
+except FileNotFoundError:
+    print("Training model...")
+    knn_model, food_df, selected_features = train_knn()
+    with open(model_path, "wb") as f:
         pickle.dump((knn_model, food_df, selected_features), f)
-    
-    return knn_model, food_df, selected_features
 
-def recommend_food(knn_model, food_df, selected_features, user_input, daily_calories):
-    user_array = np.array([[daily_calories, user_input.carbohydrates, user_input.protein]])
+# Health Check API
+@app.get("/health")
+def health_check():
+    return {"status": "API is running", "model_loaded": knn_model is not None}
+
+# User Input Model
+class UserInput(BaseModel):
+    age: int
+    gender: str
+    weight: float
+    height: float
+    activity_level: str
+    carbohydrates: float
+    protein: float
+    recommendations: int = 6
+
+@app.post("/recommend")
+def get_recommendation(user_input: UserInput):
     try:
-        pred_gi = knn_model.predict(user_array)[0]
+        recommended_foods = recommend_food(knn_model, food_df, selected_features, user_input)
+        return {"recommended_foods": recommended_foods}
     except Exception as e:
-        raise ValueError(f"Error in prediction: {str(e)}")
+        raise HTTPException(status_code=400, detail=str(e))
 
-    food_df["Predicted GI Diff"] = abs(food_df["Glycemic Index"] - pred_gi)
-    recommended_foods = food_df.nsmallest(user_input.recommendations, "Predicted GI Diff")
-
-    return recommended_foods[["Food Name", "Glycemic Index", "Calories", "Carbohydrates", "Protein", "Fat", "Fiber Content"]].to_dict(orient="records")
+if __name__ == "__main__":
+    port = int(os.getenv("PORT", "8000"))
+    uvicorn.run(app, host="0.0.0.0", port=port)
