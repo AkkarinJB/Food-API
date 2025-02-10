@@ -7,10 +7,10 @@ WORKDIR /app
 
 COPY . /app/
 
-# ติดตั้ง Dependencies
+#Dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# รันเซิร์ฟเวอร์ FastAPI
+#Runserver FastAPI
 COPY requirements.txt /app/requirements.txt
 RUN pip install --no-cache-dir -r /app/requirements.txt
 CMD ["sh", "-c", "uvicorn main:app --host 0.0.0.0 --port $PORT"]

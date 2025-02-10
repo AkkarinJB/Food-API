@@ -5,16 +5,15 @@ from sklearn.preprocessing import MinMaxScaler
 from sklearn.feature_selection import SelectKBest, f_regression
 
 def train_knn():
-    # โหลดข้อมูล
     food_df = pd.read_csv("data/pred_food.csv")
 
-    # ทำ Data Cleaning
+    #Data Cleaning
     columns_to_fill = ["Glycemic Index", "Calories", "Carbohydrates", "Protein", "Fat", "Fiber Content"]
     for col in columns_to_fill:
         median_value = food_df[col].median()
         food_df[col] = food_df[col].replace(0, median_value)
 
-    # Scaling ข้อมูล
+    # Scaling Data
     scaler = MinMaxScaler()
     food_df[columns_to_fill] = scaler.fit_transform(food_df[columns_to_fill])
 

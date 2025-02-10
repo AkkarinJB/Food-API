@@ -17,10 +17,10 @@ def home():
     return {"message": "Hello, FastAPI is running!"}
 
 if __name__ == "__main__":
-    port = int(os.getenv("PORT", 8000))  # ใช้ os.getenv() เพื่ออ่านค่าพอร์ตจาก Environment Variable
+    port = int(os.getenv("PORT", "8000")) 
     uvicorn.run(app, host="0.0.0.0", port=port)
 
-#(แก้ปัญหา CORS)
+#(แก้ ติด CORS)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],  
@@ -32,13 +32,13 @@ app.add_middleware(
 # โหลดข้อมูล
 food_df = pd.read_csv("data/pred_food.csv")
 
-# ทำ Data Cleaning
+#Data Cleaning
 columns_to_fill = ["Glycemic Index", "Calories", "Carbohydrates", "Protein", "Fat", "Fiber Content"]
 for col in columns_to_fill:
     median_value = food_df[col].median()
     food_df[col] = food_df[col].replace(0, median_value)
 
-# Scaling ข้อมูล
+# Scaling Data
 scaler = MinMaxScaler()
 food_df[columns_to_fill] = scaler.fit_transform(food_df[columns_to_fill])
 
@@ -49,11 +49,11 @@ selector = SelectKBest(score_func=f_regression, k=3)
 X_selected = selector.fit_transform(X_food, y_food)
 selected_features = X_food.columns[selector.get_support()]
 
-# Train KNN Model
+#Train KNN Model
 knn_model = KNeighborsRegressor(n_neighbors=20, weights='distance')
 knn_model.fit(X_selected, y_food)
 
-# 🎯 ฟังก์ชันคำนวณ BMR และ TDEE
+#Calculate BMR & TDEE
 def calculate_calories(age, gender, weight, height, activity_level):
     if gender.lower() == "male":
         bmr = 10 * weight + 6.25 * height - 5 * age + 5
@@ -68,7 +68,7 @@ def calculate_calories(age, gender, weight, height, activity_level):
         "very active": 1.9 # นักกีฬา ออกกำลังกายหนักมาก
     }
     
-    tdee = bmr * activity_multipliers.get(activity_level, 1.2)  # คำนวณ TDEE
+    tdee = bmr * activity_multipliers.get(activity_level, 1.2)  #TDEE
     return round(tdee)
 
 # 🎯 อัปเดต API `/recommend` ให้รองรับข้อมูลสุขภาพ
