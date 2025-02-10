@@ -7,7 +7,7 @@ from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 from model import train_knn, recommend_food
 
-# Initialize FastAPI app
+
 app = FastAPI()
 
 # CORS Middleware
@@ -20,16 +20,26 @@ app.add_middleware(
 )
 
 # Load or Train Model
-model_path = "./knn_model.pkl"
-try:
-    with open(model_path, "rb") as f:
-        knn_model, food_df, selected_features = pickle.load(f)
-    print("Model loaded successfully!")
-except FileNotFoundError:
+model_path = "knn_model.pkl"
+
+def load_or_train_model():
+    """โหลดโมเดลจากไฟล์ หรือ train ใหม่หากไม่มีไฟล์หรือไฟล์เสียหาย"""
+    if os.path.exists(model_path):
+        try:
+            with open(model_path, "rb") as f:
+                knn_model, food_df, selected_features = pickle.load(f)
+            print("Model loaded successfully!")
+            return knn_model, food_df, selected_features
+        except (pickle.UnpicklingError, EOFError) as e:
+            print(f"Error loading model: {e}, retraining...")
+    
     print("Training model...")
     knn_model, food_df, selected_features = train_knn()
     with open(model_path, "wb") as f:
         pickle.dump((knn_model, food_df, selected_features), f)
+    return knn_model, food_df, selected_features
+
+knn_model, food_df, selected_features = load_or_train_model()
 
 # Health Check API
 @app.get("/health")
