@@ -1,3 +1,6 @@
+import os
+import uvicorn
+from fastapi import FastAPI
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 import pandas as pd
@@ -9,10 +12,18 @@ from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
 
+@app.get("/")
+def home():
+    return {"message": "Hello, FastAPI is running!"}
+
+if __name__ == "__main__":
+    port = int(os.getenv("PORT", 8000))  # ใช้ os.getenv() เพื่ออ่านค่าพอร์ตจาก Environment Variable
+    uvicorn.run(app, host="0.0.0.0", port=port)
+
 #(แก้ปัญหา CORS)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["*"],  
     allow_credentials=True,
     allow_methods=["*"], 
     allow_headers=["*"], 
@@ -69,7 +80,7 @@ class UserInput(BaseModel):
     activity_level: str
     carbohydrates: float
     protein: float
-    recommendations: int = 5
+    recommendations: int = 6
 
 @app.post("/recommend")
 def recommend_food(user_input: UserInput):
