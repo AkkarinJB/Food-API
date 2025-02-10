@@ -9,8 +9,6 @@ from model import train_knn, recommend_food
 
 
 app = FastAPI()
-
-# CORS Middleware
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],  
@@ -20,7 +18,7 @@ app.add_middleware(
 )
 
 # Load or Train Model
-model_path = "knn_model.pkl"
+model_path = "./knn_model.pkl"
 
 def load_or_train_model():
     """โหลดโมเดลจากไฟล์ หรือ train ใหม่หากไม่มีไฟล์หรือไฟล์เสียหาย"""
@@ -73,8 +71,11 @@ class UserInput(BaseModel):
     weight: float
     height: float
     activity_level: str
+    
     carbohydrates: float
     protein: float
+    calories:float
+
     recommendations: int = 6
 
 @app.post("/recommend")
@@ -85,7 +86,7 @@ def get_recommendation(user_input: UserInput):
             user_input.age, user_input.gender, user_input.weight,
             user_input.height, user_input.activity_level
         )
-
+        print("knn_model: " , knn_model, "\nfood_df: ", food_df, "\nselected_features: ", selected_features, "\nuser_input: ", user_input, "\ndaily_calories: ", daily_calories)
         # ส่ง daily_calories ไปที่ recommend_food()
         recommended_foods = recommend_food(knn_model, food_df, selected_features, user_input, daily_calories)
 
@@ -99,3 +100,17 @@ def get_recommendation(user_input: UserInput):
 if __name__ == "__main__":
     port = int(os.getenv("PORT", "8000"))
     uvicorn.run(app, host="0.0.0.0", port=port)
+    # x = get_recommendation (
+    #     UserInput(
+    #         age=25,
+    #         gender="male",
+    #         weight=70.5,
+    #         height=175.0,
+    #         activity_level="moderate",
+            
+    #         calories= 200.0,
+    #         carbohydrates=250.0,
+    #         protein=80.0,
+    #     )
+    # )
+    # print(x)

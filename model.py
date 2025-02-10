@@ -35,8 +35,8 @@ def train_knn():
 
 # train_knn()
 
-def recommend_food(knn_model, food_df, selected_features, user_input):
-    user_array = np.array([[user_input.calories, user_input.carbohydrates, user_input.protein]])
+def recommend_food(knn_model, food_df, selected_features, user_input, daily_calories):
+    user_array = np.array([[daily_calories, user_input.carbohydrates, user_input.protein]])
     pred_gi = knn_model.predict(user_array)[0]
 
     food_df["Predicted GI Diff"] = abs(food_df["Glycemic Index"] - pred_gi)
