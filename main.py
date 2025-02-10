@@ -1,4 +1,3 @@
-Main.py
 import os
 import uvicorn
 from fastapi import FastAPI
