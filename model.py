@@ -29,7 +29,7 @@ def train_knn():
     knn_model = KNeighborsRegressor(n_neighbors=20, weights='distance')
     knn_model.fit(X_selected, y_food)
 
-    joblib.dump(knn_model, "knn_model.pkl")
+    joblib.dump(knn_model, "knn_model.joblib")
 
     return knn_model, food_df, selected_features
 
