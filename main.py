@@ -54,11 +54,17 @@ if knn_model is None or food_df is None or selected_features is None:
 
 # API Request Model
 class FoodRequest(BaseModel):
-    calories: float
+    age: int
+    gender: str
+    weight: float
+    height: float
+    activity_level: str
+    
     carbohydrates: float
     protein: float
-    fat: float
-    fiber_content: float
+    calories:float
+
+    recommendations: int = 6
 
 @app.post("/recommend")
 def recommend_food_api(request: FoodRequest):
